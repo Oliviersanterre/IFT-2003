@@ -137,7 +137,7 @@ def miniMax(current_depth:int, node:Node, is_max:bool,
     
     copy_board = copy.deepcopy(current_board)
     if is_max:
-        arbre.value = -math.inf
+        node.value = -math.inf
         
         "tant que move generetor n'est pas vide, faire un move sur une copie"
         for move in current_board.legal_moves:
