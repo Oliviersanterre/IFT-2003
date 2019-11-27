@@ -100,18 +100,19 @@ def printBoard(board):
 def getHeuristicValue(current_board:chess.Board, move:chess.Move) -> int:
     #Retourne la valeur heuristique d'un move sur un état de jeu donné
     value = 0
-    if(current_board.is_capture(move)):
+    copy_board = copy.deepcopy(current_board)
+    copy_board.pop()
+    if(copy_board.is_capture(move)):
         piece = current_board.piece_at(move.to_square)
         piece_type = piece.piece_type
         value += VALEUR_PIECES[piece_type]
-    if(current_board.is_castling(move)):
+    if(copy_board.is_castling(move)):
         value += VALEUR_CASTLING
-    current_board.push(move)    
-    if(current_board.is_check()):
+    copy_board.push(move)    
+    if(copy_board.is_check()):
         value += VALEUR_CHECK
-    if(current_board.is_checkmate()):
+    if(copy_board.is_checkmate()):
         value = VALEUR_CHECKMATE
-    current_board.pop()
     return value
 
 "Le premier appel recoit None, None, -inf, +inf"
@@ -149,8 +150,10 @@ def miniMax(current_depth:int, node:Node, is_max:bool,
         "tant que move generetor n'est pas vide, faire un move sur une copie"
         for move in current_board.legal_moves:
             node.add(move, None, node.alpha, node.beta)
+            copy_board.push(move)
             node.children[-1].value = miniMax(current_depth+1, node.children[-1], False,
                               max_depth, copy_board)
+            copy_board.pop()
             node.value = max(node.value, node.children[-1].value)
             node.alpha = max(node.alpha, node.value)
             
@@ -165,8 +168,10 @@ def miniMax(current_depth:int, node:Node, is_max:bool,
         "tant que move generetor n'est pas vide, faire un move sur une copie"
         for move in current_board.legal_moves:
             node.add(move, None, node.alpha, node.beta)
+            copy_board.push(move)
             node.children[-1].value = miniMax(current_depth+1, node.children[-1], True,
                               max_depth, copy_board)
+            copy_board.pop()
             node.value = min(node.value, node.children[-1].value)
             node.beta = min(node.beta, node.value)
             
