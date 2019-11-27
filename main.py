@@ -101,9 +101,9 @@ def getHeuristicValue(current_board:chess.Board, move:chess.Move) -> int:
         piece = current_board.piece_at(move.to_square)
         piece_type = piece.piece_type
         value += VALEUR_PIECES[piece_type]
-    if(current_board.is_check(move)):
+    if(current_board.is_check()):
         value += VALEUR_CHECK
-    if(current_board.is_checkmate(move)):
+    if(current_board.is_checkmate()):
         value = VALEUR_CHECKMATE
     if(current_board.is_castling(move)):
         value += VALEUR_CASTLING
