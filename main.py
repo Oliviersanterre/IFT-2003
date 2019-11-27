@@ -75,11 +75,11 @@ def joueurJoue(board):
     #On push le move
     move = chess.Move.from_uci(move)
     if (board.is_capture(move)):
-        player_captures_piece = board.piece_at(move.to_square).piece_type;
+        player_captures_piece = board.piece_at(move.to_square);
     board.push(move)
 
     if (player_captures_piece):
-        print("L'IA a perdu la piece : " + str(player_captures_piece) + "\n")
+        print("L'IA a perdu la piece : " + (player_captures_piece.symbol()) + "\n")
 
     #Retourne false, comme quoi le joueur ne veut pas quitter
     return False
@@ -100,15 +100,15 @@ def iaJoue(board, niveauDeDifficulte):
     move = racine.get_next_move()
 
     if (board.is_capture(move)):
-        ia_captures_piece = board.piece_at(move.to_square).piece_type;
+        ia_captures_piece = board.piece_at(move.to_square);
 
     #On push le move
     board.push(move)
 
-    print("L'IA a joué: {}".format(move))
+    print("L'IA a joué: {}".format(move) + "\n")
 
     if(ia_captures_piece):
-        print("Vous avez perdu la piece : " + str(ia_captures_piece) + "\n")
+        print("Vous avez perdu la piece : " + (ia_captures_piece.symbol()) + "\n")
 
 
 
