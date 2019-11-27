@@ -32,11 +32,11 @@ def jouer(equipe, niveauDifficulte):
             #La fonction joueurJoue retourne True si le joueur veut quitter
             partieTerminee = joueurJoue(board)
         else:
+            partieTerminee = iaJoue(board, niveauDifficulte)
             # TODO mettre le code de l'IA ici
             #Pour l'instant c'est nous qui jouons
             # Ca serait bien d'avoir un retour console qui nous écrit le move que
             #vient de faire l'IA
-            joueurJoue(board)
 
         #Si la partie est terminée, on sort de la boucle
         if (board.is_game_over()):
@@ -65,6 +65,20 @@ def joueurJoue(board):
 
     #On push le move
     move = chess.Move.from_uci(move)
+    board.push(move)
+
+    #Retourne false, comme quoi le joueur ne veut pas quitter
+    return False
+
+def iaJoue(board, niveauDeDifficulte):
+
+    #On crée la racine de l'arbre des mouvements
+    racine = Node(None, None, -math.inf, math.inf)
+    #On fait un parcour miniMax génératif de cet arbre en considérant l'état actuel du jeu
+    racine.value = miniMax(0, racine, True, niveauDeDifficulte, board)
+    #On récupère le move choisi par l'IA
+    move = racine.get_next_move()
+    #On push le move
     board.push(move)
 
     #Retourne false, comme quoi le joueur ne veut pas quitter
@@ -107,14 +121,17 @@ class Node():
     def add(self, child_move:chess.Move, child_value:int, child_alpha:int, child_beta:int):
         self.children.append(Node(child_move, child_value, child_alpha, child_beta))
     def get_next_move(self):
+        best = self.value
         for i in range(len(self.children)):
             if(self.children[i].value == self.value):
-                return self.children[i].move
+                best_move = self.children[i].move
+                break
+        return best_move
 
 def miniMax(current_depth:int, node:Node, is_max:bool,
             max_depth:int, current_board:chess.Board) -> int:
     #Calcul minimax avec alpha-beta qui prend en entrée la profondeur actuelle, un
-    #
+    #Node, la profondeur de recherche maximum et une copie de l'état de jeu
     if(current_depth == max_depth):
         return getHeuristicValue(current_board, node.move)
     
