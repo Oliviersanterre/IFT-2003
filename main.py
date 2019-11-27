@@ -1,5 +1,14 @@
 import argparse
 import chess
+import copy
+import math
+
+#Les valeurs heuristiques peuvent être modifiées ici
+PIECE_TYPES = [PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING] = range(1, 7)
+VALEUR_PIECES = {1:10, 2:40, 3:50, 4:80, 5:100, 6:math.inf}
+VALEUR_CHECK = 50
+VALEUR_CHECKMATE = math.inf
+VALEUR_CASTLING = 0
 
 
 def jouer(equipe, niveauDifficulte):
@@ -70,7 +79,78 @@ def printBoard(board):
         print(str(abs(i - 8)) + "   " + board[i * 16: i * 16 + 15] + "   " + str(abs(i - 8)))
     print("\n    A B C D E F G H")
 
+    
+def getHeuristicValue(current_board:chess.Board, move:chess.Move) -> int:
+    #Retourne la valeur heuristique d'un move sur un état de jeu donné
+    value = 0
+    if(current_board.is_capture(move)):
+        piece = current_board.piece_at(move.to_square)
+        piece_type = piece.piece_type
+        value += VALEUR_PIECES[piece_type]
+    if(current_board.is_check(move)):
+        value += VALEUR_CHECK
+    if(current_board.is_checkmate(move)):
+        value = VALEUR_CHECKMATE
+    if(current_board.is_castling(move)):
+        value += VALEUR_CASTLING
+    return value
 
+"Le premier appel recoit None, None, -inf, +inf"
+class Node():
+    #Classe qui construit un arbre des moves, et de leur valeur
+    def __init__(self, move:chess.Move, value:int, alpha:int, beta:int):
+        self.move = move
+        self.children = []
+        self.value = value
+        self.alpha = alpha
+        self.beta = beta
+    def add(self, child_move:chess.Move, child_value:int, child_alpha:int, child_beta:int):
+        self.children.append(Node(child_move, child_value, child_alpha, child_beta))
+    def get_next_move(self):
+        for i in range(len(self.children)):
+            if(self.children[i].value == self.value):
+                return self.children[i].move
+
+def miniMax(current_depth:int, node:Node, is_max:bool,
+            max_depth:int, current_board:chess.Board) -> int:
+    #Calcul minimax avec alpha-beta qui prend en entrée la profondeur actuelle, un
+    #
+    if(current_depth == max_depth):
+        return getHeuristicValue(current_board, node.move)
+    
+    copy_board = copy.deepcopy(current_board)
+    if is_max:
+        arbre.value = -math.inf
+        
+        "tant que move generetor n'est pas vide, faire un move sur une copie"
+        for move in current_board.legal_moves:
+            node.add(move, None, node.alpha, node.beta)
+            node.children[-1].value = miniMax(current_depth+1, node.children[-1], False,
+                              max_depth, copy_board)
+            node.value = max(node.value, node.children[-1].value)
+            node.alpha = max(node.alpha, node.value)
+            
+            if node.beta <= node.alpha:
+                break
+        
+        return node.value
+    
+    else:
+        node.value = math.inf
+        
+        "tant que move generetor n'est pas vide, faire un move sur une copie"
+        for move in current_board.legal_moves:
+            node.add(move, None, node.alpha, node.beta)
+            node.children[-1].value = miniMax(current_depth+1, node.children[-1], True,
+                              max_depth, copy_board)
+            node.value = min(node.value, node.children[-1].value)
+            node.beta = min(node.beta, node.value)
+            
+            if node.beta <= node.alpha:
+                break
+        return node.value
+    
+    
 def main():
     #Instantiation du parser
     parser = argparse.ArgumentParser()
