@@ -15,6 +15,7 @@ VALEUR_CASTLING = 0
 def jouer(equipe, niveauDifficulte):
     #Initialisation du plateau
     board = chess.Board()
+
     #Les blancs commencent, si le joueur a choisi les noirs il ne commence pas
     tourJoueur = equipe == 'B'
 
@@ -41,6 +42,10 @@ def jouer(equipe, niveauDifficulte):
 
         #Si la partie est terminée, on sort de la boucle
         if (board.is_game_over()):
+            if tourJoueur:
+                print("La partie est terminée, vous avez gagné contre l'IA")
+            else:
+                print("La partie est terminée, vous avez perdu contre l'IA")
             partieTerminee = True
 
         #Changement de tour
@@ -48,6 +53,9 @@ def jouer(equipe, niveauDifficulte):
 
 
 def joueurJoue(board):
+
+    #index de la piece capturé par l'utilisateur (s'il y a lieu)
+    player_captures_piece = 0;
 
     #On imprime le plateau
     printBoard(board.__str__())
@@ -66,23 +74,43 @@ def joueurJoue(board):
 
     #On push le move
     move = chess.Move.from_uci(move)
+    if (board.is_capture(move)):
+        player_captures_piece = board.piece_at(move.to_square).piece_type;
     board.push(move)
+
+    if (player_captures_piece):
+        print("L'IA a perdu la piece : " + str(player_captures_piece) + "\n")
 
     #Retourne false, comme quoi le joueur ne veut pas quitter
     return False
 
 def iaJoue(board, niveauDeDifficulte):
 
+    #Index de la piece capturé par l'IA (s'il y a lieu)
+    ia_captures_piece = 0;
+
     #On crée la racine de l'arbre des mouvements
     racine = Node(None, None, -math.inf, math.inf)
+
     #On fait un parcour miniMax génératif de cet arbre en considérant l'état actuel du jeu
     copy_board = copy.deepcopy(board)
     racine.value = miniMax(0, racine, True, niveauDeDifficulte, copy_board)
+
     #On récupère le move choisi par l'IA
     move = racine.get_next_move()
+
+    if (board.is_capture(move)):
+        ia_captures_piece = board.piece_at(move.to_square).piece_type;
+
     #On push le move
     board.push(move)
-    print("L'IA a joué: {}".format(move) + "\n")
+
+    print("L'IA a joué: {}".format(move))
+
+    if(ia_captures_piece):
+        print("Vous avez perdu la piece : " + str(ia_captures_piece) + "\n")
+
+
 
     #Retourne false, comme quoi le joueur ne veut pas quitter
     return False
@@ -128,7 +156,7 @@ class Node():
         self.children.append(Node(child_move, child_value, child_alpha, child_beta))
     def get_next_move(self):
         best_moves = []
-        print("Taille de la liste des moves possibles: " + str(len(self.children)) + "\n\n")
+        print("Taille de la liste des moves possibles: " + str(len(self.children)) + "\n")
         for i in range(len(self.children)):
             #print(str(self.children[i].value) + "\n")
             if(self.children[i].value == self.value):
