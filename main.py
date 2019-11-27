@@ -2,6 +2,7 @@ import argparse
 import chess
 import copy
 import math
+import random
 
 #Les valeurs heuristiques peuvent être modifiées ici
 PIECE_TYPES = [PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING] = range(1, 7)
@@ -75,11 +76,13 @@ def iaJoue(board, niveauDeDifficulte):
     #On crée la racine de l'arbre des mouvements
     racine = Node(None, None, -math.inf, math.inf)
     #On fait un parcour miniMax génératif de cet arbre en considérant l'état actuel du jeu
-    racine.value = miniMax(0, racine, True, niveauDeDifficulte, board)
+    copy_board = copy.deepcopy(board)
+    racine.value = miniMax(0, racine, True, niveauDeDifficulte, copy_board)
     #On récupère le move choisi par l'IA
     move = racine.get_next_move()
     #On push le move
     board.push(move)
+    print("L'IA a joué: {}".format(move) + "\n")
 
     #Retourne false, comme quoi le joueur ne veut pas quitter
     return False
@@ -101,12 +104,14 @@ def getHeuristicValue(current_board:chess.Board, move:chess.Move) -> int:
         piece = current_board.piece_at(move.to_square)
         piece_type = piece.piece_type
         value += VALEUR_PIECES[piece_type]
+    if(current_board.is_castling(move)):
+        value += VALEUR_CASTLING
+    current_board.push(move)    
     if(current_board.is_check()):
         value += VALEUR_CHECK
     if(current_board.is_checkmate()):
         value = VALEUR_CHECKMATE
-    if(current_board.is_castling(move)):
-        value += VALEUR_CASTLING
+    current_board.pop()
     return value
 
 "Le premier appel recoit None, None, -inf, +inf"
@@ -121,12 +126,14 @@ class Node():
     def add(self, child_move:chess.Move, child_value:int, child_alpha:int, child_beta:int):
         self.children.append(Node(child_move, child_value, child_alpha, child_beta))
     def get_next_move(self):
-        best = self.value
+        best_moves = []
+        print("Taille de la liste des moves possibles: " + str(len(self.children)) + "\n\n")
         for i in range(len(self.children)):
+            #print(str(self.children[i].value) + "\n")
             if(self.children[i].value == self.value):
-                best_move = self.children[i].move
-                break
-        return best_move
+                best_moves.append(self.children[i].move)
+                #print("Best moves: " + str(self.children[i].move) + "\n")
+        return random.choice(best_moves)
 
 def miniMax(current_depth:int, node:Node, is_max:bool,
             max_depth:int, current_board:chess.Board) -> int:
