@@ -90,7 +90,7 @@ def iaJoue(board, niveauDeDifficulte):
     ia_captures_piece = 0;
 
     #On crée la racine de l'arbre des mouvements
-    racine = Node(None, None, -math.inf, math.inf)
+    racine = Node(None, None, -math.inf, math.inf, 0)
 
     #On fait un parcour miniMax génératif de cet arbre en considérant l'état actuel du jeu
     copy_board = copy.deepcopy(board)
@@ -143,17 +143,18 @@ def getHeuristicValue(current_board:chess.Board, move:chess.Move) -> int:
         value = VALEUR_CHECKMATE
     return value
 
-"Le premier appel recoit None, None, -inf, +inf"
+"Le premier appel recoit None, None, -inf, +inf, None"
 class Node():
     #Classe qui construit un arbre des moves, et de leur valeur
-    def __init__(self, move:chess.Move, value:int, alpha:int, beta:int):
+    def __init__(self, move:chess.Move, value:int, alpha:int, beta:int, val_move:int):
         self.move = move
+        self.val_move = val_move
         self.children = []
         self.value = value
         self.alpha = alpha
         self.beta = beta
-    def add(self, child_move:chess.Move, child_value:int, child_alpha:int, child_beta:int):
-        self.children.append(Node(child_move, child_value, child_alpha, child_beta))
+    def add(self, child_move:chess.Move, child_value:int, child_alpha:int, child_beta:int, child_val_move:int):
+        self.children.append(Node(child_move, child_value, child_alpha, child_beta, child_val_move))
     def get_next_move(self):
         best_moves = []
         print("Taille de la liste des moves possibles: " + str(len(self.children)) + "\n")
@@ -168,19 +169,26 @@ def miniMax(current_depth:int, node:Node, is_max:bool,
             max_depth:int, current_board:chess.Board) -> int:
     #Calcul minimax avec alpha-beta qui prend en entrée la profondeur actuelle, un
     #Node, la profondeur de recherche maximum et une copie de l'état de jeu
+    copy_board = copy.deepcopy(current_board)
+    
     if(current_depth == max_depth):
         return getHeuristicValue(current_board, node.move)
+
+        if is_max:
+            node.value = node.val_move + getHeuristicValue(copy_board, node.move)
+        else:
+            node.value = node.val_move - getHeuristicValue(copy_board, node.move)
+        return 0
     
-    copy_board = copy.deepcopy(current_board)
     if is_max:
-        node.value = -math.inf
-        
         "tant que move generetor n'est pas vide, faire un move sur une copie"
+        node.value = -math.inf
+        if(node.move != None):
+            node.val_move += getHeuristicValue(copy_board, node.move)
         for move in current_board.legal_moves:
-            node.add(move, None, node.alpha, node.beta)
+            node.add(move, None, node.alpha, node.beta, node.val_move)
             copy_board.push(move)
-            node.children[-1].value = miniMax(current_depth+1, node.children[-1], False,
-                              max_depth, copy_board)
+            miniMax(current_depth+1, node.children[-1], False, max_depth, copy_board)
             copy_board.pop()
             node.value = max(node.value, node.children[-1].value)
             node.alpha = max(node.alpha, node.value)
@@ -192,13 +200,14 @@ def miniMax(current_depth:int, node:Node, is_max:bool,
     
     else:
         node.value = math.inf
+        if(node.move != None):
+            node.val_move -= getHeuristicValue(copy_board, node.move)
         
         "tant que move generetor n'est pas vide, faire un move sur une copie"
         for move in current_board.legal_moves:
-            node.add(move, None, node.alpha, node.beta)
+            node.add(move, None, node.alpha, node.beta, node.val_move)
             copy_board.push(move)
-            node.children[-1].value = miniMax(current_depth+1, node.children[-1], True,
-                              max_depth, copy_board)
+            miniMax(current_depth+1, node.children[-1], True, max_depth, copy_board)
             copy_board.pop()
             node.value = min(node.value, node.children[-1].value)
             node.beta = min(node.beta, node.value)
