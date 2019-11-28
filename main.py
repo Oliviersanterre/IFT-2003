@@ -94,7 +94,7 @@ def iaJoue(board, niveauDeDifficulte):
 
     #On fait un parcour miniMax génératif de cet arbre en considérant l'état actuel du jeu
     copy_board = copy.deepcopy(board)
-    racine.value = miniMax(0, racine, True, niveauDeDifficulte, copy_board)
+    miniMax(0, racine, True, niveauDeDifficulte, copy_board)
 
     #On récupère le move choisi par l'IA
     move = racine.get_next_move()
@@ -172,8 +172,6 @@ def miniMax(current_depth:int, node:Node, is_max:bool,
     copy_board = copy.deepcopy(current_board)
     
     if(current_depth == max_depth):
-        return getHeuristicValue(current_board, node.move)
-
         if is_max:
             node.value = node.val_move + getHeuristicValue(copy_board, node.move)
         else:
@@ -196,7 +194,7 @@ def miniMax(current_depth:int, node:Node, is_max:bool,
             if node.beta <= node.alpha:
                 break
         
-        return node.value
+        return 1
     
     else:
         node.value = math.inf
@@ -214,7 +212,7 @@ def miniMax(current_depth:int, node:Node, is_max:bool,
             
             if node.beta <= node.alpha:
                 break
-        return node.value
+        return 1
     
     
 def main():
