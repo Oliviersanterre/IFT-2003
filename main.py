@@ -7,10 +7,37 @@ import random
 #Les valeurs heuristiques peuvent être modifiées ici
 PIECE_TYPES = [PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING] = range(1, 7)
 VALEUR_PIECES = {1:10, 2:40, 3:50, 4:80, 5:100, 6:math.inf}
-VALEUR_CHECK = 50
+VALEUR_CHECK = 5
 VALEUR_CHECKMATE = math.inf
 VALEUR_CASTLING = 0
+VALEUR_PROMOTION = {1:0, 2:35, 3:45, 4:75, 5:95}
 
+
+def tester(board, equipe, niveauDifficulte):
+    # Les blancs commencent, si le joueur a choisi les noirs il ne commence pas
+    tourJoueur = equipe == 'B'
+
+    # condition d'arrêt de la boucle de jeu
+    partieTerminee = False
+
+    # Boucle de jeu
+    while not partieTerminee:
+        if tourJoueur:
+            # La fonction joueurJoue retourne True si le joueur veut quitter
+            partieTerminee = joueurJoue(board)
+        else:
+            partieTerminee = iaJoue(board, niveauDifficulte)
+
+        # Si la partie est terminée, on sort de la boucle
+        if (board.is_game_over()):
+            if tourJoueur:
+                print("La partie est terminée, vous avez gagné contre l'IA")
+            else:
+                print("La partie est terminée, vous avez perdu contre l'IA")
+            partieTerminee = True
+
+        # Changement de tour
+        tourJoueur = not tourJoueur
 
 def jouer(equipe, niveauDifficulte):
     #Initialisation du plateau
@@ -35,10 +62,7 @@ def jouer(equipe, niveauDifficulte):
             partieTerminee = joueurJoue(board)
         else:
             partieTerminee = iaJoue(board, niveauDifficulte)
-            # TODO mettre le code de l'IA ici
-            #Pour l'instant c'est nous qui jouons
-            # Ca serait bien d'avoir un retour console qui nous écrit le move que
-            #vient de faire l'IA
+
 
         #Si la partie est terminée, on sort de la boucle
         if (board.is_game_over()):
@@ -55,7 +79,7 @@ def jouer(equipe, niveauDifficulte):
 def joueurJoue(board):
 
     #index de la piece capturé par l'utilisateur (s'il y a lieu)
-    player_captures_piece = 0;
+    player_captures_piece = 0
 
     #On imprime le plateau
     printBoard(board.__str__())
@@ -71,11 +95,13 @@ def joueurJoue(board):
     while (move not in legal_moves):
         print("Ce coup n'est pas légal")
         move = input("Inscrivez votre coup ici : ")
+        if (move == 'q'):
+            return True
 
     #On push le move
     move = chess.Move.from_uci(move)
     if (board.is_capture(move)):
-        player_captures_piece = board.piece_at(move.to_square);
+        player_captures_piece = board.piece_at(move.to_square)
     board.push(move)
 
     if (player_captures_piece):
@@ -84,10 +110,11 @@ def joueurJoue(board):
     #Retourne false, comme quoi le joueur ne veut pas quitter
     return False
 
+
 def iaJoue(board, niveauDeDifficulte):
 
     #Index de la piece capturé par l'IA (s'il y a lieu)
-    ia_captures_piece = 0;
+    ia_captures_piece = 0
 
     #On crée la racine de l'arbre des mouvements
     racine = Node(None, None, -math.inf, math.inf, 0)
@@ -100,7 +127,7 @@ def iaJoue(board, niveauDeDifficulte):
     move = racine.get_next_move()
 
     if (board.is_capture(move)):
-        ia_captures_piece = board.piece_at(move.to_square);
+        ia_captures_piece = board.piece_at(move.to_square)
 
     #On push le move
     board.push(move)
@@ -130,17 +157,36 @@ def getHeuristicValue(current_board:chess.Board, move:chess.Move) -> int:
     value = 0
     copy_board = copy.deepcopy(current_board)
     copy_board.pop()
+
+    #gain de valeur s'il y a capture
     if(copy_board.is_capture(move)):
-        piece = current_board.piece_at(move.to_square)
+        piece = copy_board.piece_at(move.to_square)
         piece_type = piece.piece_type
         value += VALEUR_PIECES[piece_type]
+
+    #gain de valeur s'il y a castling
     if(copy_board.is_castling(move)):
         value += VALEUR_CASTLING
-    copy_board.push(move)    
+
+    #gain de valeur s'il y a promotion
+    if(move.promotion):
+        piece = current_board.piece_at(move.to_square)
+        piece_type = piece.piece_type
+        value += VALEUR_PROMOTION[piece_type]
+
+    #gain de valeur s'il y a echec
     if(copy_board.is_check()):
         value += VALEUR_CHECK
+
+    #gain de valeur s'il y a echec et mat
     if(copy_board.is_checkmate()):
         value = VALEUR_CHECKMATE
+
+    # On push le move sur la copy du board
+    copy_board.push(move)
+
+    #print("Heuristic Value Test\n")
+    #print("valeur :" + str(value) + "\n")
     return value
 
 "Le premier appel recoit None, None, -inf, +inf, None"
@@ -153,63 +199,83 @@ class Node():
         self.value = value
         self.alpha = alpha
         self.beta = beta
+
     def add(self, child_move:chess.Move, child_value:int, child_alpha:int, child_beta:int, child_val_move:int):
         self.children.append(Node(child_move, child_value, child_alpha, child_beta, child_val_move))
+
     def get_next_move(self):
         best_moves = []
-        print("Taille de la liste des moves possibles: " + str(len(self.children)) + "\n")
+        dummy = self.value
+        dummy2 = self.value
+        best_move_index = -1
+        #print("Taille de la liste des moves possibles: " + str(len(self.children)) + "\n")
         for i in range(len(self.children)):
-            #print(str(self.children[i].value) + "\n")
-            if(self.children[i].value == self.value):
-                best_moves.append(self.children[i].move)
-                #print("Best moves: " + str(self.children[i].move) + "\n")
-        return random.choice(best_moves)
 
-def miniMax(current_depth:int, node:Node, is_max:bool,
-            max_depth:int, current_board:chess.Board) -> int:
-    #Calcul minimax avec alpha-beta qui prend en entrée la profondeur actuelle, un
-    #Node, la profondeur de recherche maximum et une copie de l'état de jeu
+            #Si l'un des choix est clairement meilleur, on le choisit
+            if(self.children[i].value < dummy):
+                dummy = self.children[i].value
+                best_move_index = i
+                #print("Best moves: " + str(self.children[i].move) + "\n\n")
+
+            #Sinon on cherche une valeur egale
+            elif(self.children[i].value == dummy2):
+                best_moves.append(self.children[i].move)
+                #print("not too bad moves: " + str(self.children[i].move) + "\n\n")
+
+
+        if(best_move_index == -1 and len(best_moves)):
+            print("Le choix a ete RANDOM\n")
+            return random.choice(best_moves)
+
+        print("*** La valeur choisie est :" + str(self.children[best_move_index].value) + " ***\n")
+        return self.children[best_move_index].move
+
+
+def miniMax(current_depth: int, node: Node, is_max: bool,
+            max_depth: int, current_board: chess.Board) -> int:
+    # Calcul minimax avec alpha-beta qui prend en entrée la profondeur actuelle, un
+    # Node, la profondeur de recherche maximum et une copie de l'état de jeu
     copy_board = copy.deepcopy(current_board)
-    
-    if(current_depth == max_depth):
+
+    if (current_depth == max_depth):
         if is_max:
             node.value = node.val_move + getHeuristicValue(copy_board, node.move)
         else:
             node.value = node.val_move - getHeuristicValue(copy_board, node.move)
         return 0
-    
+
     if is_max:
         "tant que move generetor n'est pas vide, faire un move sur une copie"
         node.value = -math.inf
-        if(node.move != None):
+        if (node.move != None):
             node.val_move += getHeuristicValue(copy_board, node.move)
         for move in current_board.legal_moves:
             node.add(move, None, node.alpha, node.beta, node.val_move)
             copy_board.push(move)
-            miniMax(current_depth+1, node.children[-1], False, max_depth, copy_board)
+            miniMax(current_depth + 1, node.children[-1], False, max_depth, copy_board)
             copy_board.pop()
             node.value = max(node.value, node.children[-1].value)
             node.alpha = max(node.alpha, node.value)
-            
+
             if node.beta <= node.alpha:
                 break
-        
+
         return 1
-    
+
     else:
         node.value = math.inf
-        if(node.move != None):
+        if (node.move != None):
             node.val_move -= getHeuristicValue(copy_board, node.move)
-        
+
         "tant que move generetor n'est pas vide, faire un move sur une copie"
         for move in current_board.legal_moves:
             node.add(move, None, node.alpha, node.beta, node.val_move)
             copy_board.push(move)
-            miniMax(current_depth+1, node.children[-1], True, max_depth, copy_board)
+            miniMax(current_depth + 1, node.children[-1], True, max_depth, copy_board)
             copy_board.pop()
             node.value = min(node.value, node.children[-1].value)
             node.beta = min(node.beta, node.value)
-            
+
             if node.beta <= node.alpha:
                 break
         return 1
