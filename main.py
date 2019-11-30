@@ -7,10 +7,40 @@ import random
 #Les valeurs heuristiques peuvent être modifiées ici
 PIECE_TYPES = [PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING] = range(1, 7)
 VALEUR_PIECES = {1:10, 2:40, 3:50, 4:80, 5:100, 6:math.inf}
-VALEUR_CHECK = 50
+VALEUR_CHECK = 5
 VALEUR_CHECKMATE = math.inf
 VALEUR_CASTLING = 0
+VALEUR_PROMOTION = {1:0, 2:35, 3:45, 4:75, 5:95}
 
+
+def tester(board, equipe, niveauDifficulte, algoType):
+
+    #Les blancs commencent, si le joueur a choisi les noirs il ne commence pas
+    tourJoueur = equipe == 'B'
+
+    #condition d'arrêt de la boucle de jeu
+    partieTerminee = False
+
+    #Boucle de jeu
+    while not partieTerminee:
+        #printBoard(board.__str__())
+        if tourJoueur:
+            #La fonction joueurJoue retourne True si le joueur veut quitter
+            partieTerminee = joueurJoue(board)
+        else:
+            partieTerminee = iaJoue(board, niveauDifficulte, algoType)
+           
+
+        #Si la partie est terminée, on sort de la boucle
+        if (board.is_game_over()):
+            if tourJoueur:
+                print("La partie est terminée, vous avez gagné contre l'IA")
+            else:
+                print("La partie est terminée, vous avez perdu contre l'IA")
+            partieTerminee = True
+
+        #Changement de tour
+        tourJoueur = not tourJoueur
 
 def jouer(equipe, niveauDifficulte):
     #Initialisation du plateau
@@ -30,22 +60,22 @@ def jouer(equipe, niveauDifficulte):
 
     #Boucle de jeu
     while not partieTerminee:
+        printBoard(board.__str__())
         if tourJoueur:
             #La fonction joueurJoue retourne True si le joueur veut quitter
-            partieTerminee = joueurJoue(board)
+            partieTerminee = iaJoue(board, niveauDifficulte, 1)
         else:
-            partieTerminee = iaJoue(board, niveauDifficulte)
-            # TODO mettre le code de l'IA ici
-            #Pour l'instant c'est nous qui jouons
-            # Ca serait bien d'avoir un retour console qui nous écrit le move que
-            #vient de faire l'IA
+            partieTerminee = iaJoue(board, 3, 2)
 
         #Si la partie est terminée, on sort de la boucle
         if (board.is_game_over()):
-            if tourJoueur:
-                print("La partie est terminée, vous avez gagné contre l'IA")
+            if (board.is_insufficient_material()):
+                print("Partie nulle")
             else:
-                print("La partie est terminée, vous avez perdu contre l'IA")
+                if tourJoueur:
+                    print("La partie est terminée, vous avez gagné contre l'IA")
+                else:
+                    print("La partie est terminée, vous avez perdu contre l'IA")
             partieTerminee = True
 
         #Changement de tour
@@ -71,7 +101,8 @@ def joueurJoue(board):
     while (move not in legal_moves):
         print("Ce coup n'est pas légal")
         move = input("Inscrivez votre coup ici : ")
-
+        if (move == 'q'):
+            return True
     #On push le move
     move = chess.Move.from_uci(move)
     if (board.is_capture(move)):
@@ -84,7 +115,7 @@ def joueurJoue(board):
     #Retourne false, comme quoi le joueur ne veut pas quitter
     return False
 
-def iaJoue(board, niveauDeDifficulte):
+def iaJoue(board, niveauDeDifficulte, typeMinimax):
 
     #Index de la piece capturé par l'IA (s'il y a lieu)
     ia_captures_piece = 0;
@@ -94,7 +125,7 @@ def iaJoue(board, niveauDeDifficulte):
 
     #On fait un parcour miniMax génératif de cet arbre en considérant l'état actuel du jeu
     copy_board = copy.deepcopy(board)
-    miniMax(0, racine, True, niveauDeDifficulte, copy_board)
+    miniMax(0, racine, True, niveauDeDifficulte, copy_board, typeMinimax)
 
     #On récupère le move choisi par l'IA
     move = racine.get_next_move()
@@ -125,22 +156,85 @@ def printBoard(board):
     print("\n    A B C D E F G H")
 
     
-def getHeuristicValue(current_board:chess.Board, move:chess.Move) -> int:
+def getHeuristicValueDefenseOriented(current_board:chess.Board, move:chess.Move) -> int:
     #Retourne la valeur heuristique d'un move sur un état de jeu donné
+
     value = 0
-    copy_board = copy.deepcopy(current_board)
-    copy_board.pop()
-    if(copy_board.is_capture(move)):
+    current_board.pop()
+
+    #gain de valeur s'il y a capture
+    if(current_board.is_capture(move)):
+        current_board.push(move)
         piece = current_board.piece_at(move.to_square)
+        current_board.pop()
         piece_type = piece.piece_type
         value += VALEUR_PIECES[piece_type]
-    if(copy_board.is_castling(move)):
+
+    #gain de valeur s'il y a castling
+    if(current_board.is_castling(move)):
         value += VALEUR_CASTLING
-    copy_board.push(move)    
-    if(copy_board.is_check()):
+
+    #gain de valeur s'il y a promotion
+    if(move.promotion):
+        current_board.push(move)
+        piece = current_board.piece_at(move.to_square)
+        current_board.pop()
+        piece_type = piece.piece_type
+        value += VALEUR_PROMOTION[piece_type]
+
+    current_board.push(move)
+
+    #gain de valeur s'il y a echec
+    if(current_board.is_check()):
         value += VALEUR_CHECK
-    if(copy_board.is_checkmate()):
+
+    #gain de valeur s'il y a echec et mat
+    if(current_board.is_checkmate()):
         value = VALEUR_CHECKMATE
+
+    return value
+   
+
+def getHeuristicValueAttackOriented(board:chess.Board, move:chess.Move) -> int:
+    board.pop()
+    square = move.from_square
+    color = board.piece_at(square).color
+    board.push(move)
+    white_score = 0
+    black_score = 0
+    bonus_attaque = 3
+    for i in range(0, 64):
+        # s'il y a une pièce
+        if board.piece_type_at(i) != None:
+            # si la piece est noire
+            if board.piece_at(i).color:
+                # ajout du score pour les noirs
+                if i < 32:
+                    white_score += int(board.piece_type_at(i))
+                else:
+                    white_score += int(board.piece_type_at(i)) + bonus_attaque
+            # sinon elle est blanche
+            else:
+                # ajout du score pour les blancs
+                if i >= 32:
+                    black_score += int(board.piece_type_at(i))
+                else:
+                    black_score += int(board.piece_type_at(i)) + bonus_attaque
+
+
+    value = white_score - black_score
+
+    if (move.promotion):
+        piece = board.piece_at(move.to_square)
+        piece_type = piece.piece_type
+        value += VALEUR_PROMOTION[piece_type]
+
+    if (board.is_check()):
+        value += VALEUR_CHECK
+
+    if (board.is_checkmate()):
+        value = VALEUR_CHECKMATE
+
     return value
 
 "Le premier appel recoit None, None, -inf, +inf, None"
@@ -166,28 +260,37 @@ class Node():
         return random.choice(best_moves)
 
 def miniMax(current_depth:int, node:Node, is_max:bool,
-            max_depth:int, current_board:chess.Board) -> int:
+            max_depth:int, current_board:chess.Board, heuristique_type:int) -> int:
     #Calcul minimax avec alpha-beta qui prend en entrée la profondeur actuelle, un
     #Node, la profondeur de recherche maximum et une copie de l'état de jeu
-    copy_board = copy.deepcopy(current_board)
     
     if(current_depth == max_depth):
-        if is_max:
-            node.value = node.val_move + getHeuristicValue(copy_board, node.move)
+        if (heuristique_type == 1):
+            if is_max:
+                node.value = node.val_move + getHeuristicValueAttackOriented(current_board, node.move)
+            else:
+                node.value = node.val_move - getHeuristicValueAttackOriented(current_board, node.move)
+            return 0
         else:
-            node.value = node.val_move - getHeuristicValue(copy_board, node.move)
-        return 0
+            if is_max:
+                node.value = node.val_move + getHeuristicValueDefenseOriented(current_board, node.move)
+            else:
+                node.value = node.val_move - getHeuristicValueDefenseOriented(current_board, node.move)
+            return 0
     
     if is_max:
         "tant que move generetor n'est pas vide, faire un move sur une copie"
         node.value = -math.inf
         if(node.move != None):
-            node.val_move += getHeuristicValue(copy_board, node.move)
+            if (heuristique_type == 1):
+                node.val_move += getHeuristicValueAttackOriented(current_board, node.move)
+            else:
+                node.val_move += getHeuristicValueDefenseOriented(current_board, node.move)
         for move in current_board.legal_moves:
             node.add(move, None, node.alpha, node.beta, node.val_move)
-            copy_board.push(move)
-            miniMax(current_depth+1, node.children[-1], False, max_depth, copy_board)
-            copy_board.pop()
+            current_board.push(move)
+            miniMax(current_depth+1, node.children[-1], False, max_depth, current_board, heuristique_type)
+            current_board.pop()
             node.value = max(node.value, node.children[-1].value)
             node.alpha = max(node.alpha, node.value)
             
@@ -199,14 +302,17 @@ def miniMax(current_depth:int, node:Node, is_max:bool,
     else:
         node.value = math.inf
         if(node.move != None):
-            node.val_move -= getHeuristicValue(copy_board, node.move)
+            if (heuristique_type == 1):
+                node.val_move += getHeuristicValueAttackOriented(current_board, node.move)
+            else:
+                node.val_move += getHeuristicValueDefenseOriented(current_board, node.move)
         
         "tant que move generetor n'est pas vide, faire un move sur une copie"
         for move in current_board.legal_moves:
             node.add(move, None, node.alpha, node.beta, node.val_move)
-            copy_board.push(move)
-            miniMax(current_depth+1, node.children[-1], True, max_depth, copy_board)
-            copy_board.pop()
+            current_board.push(move)
+            miniMax(current_depth+1, node.children[-1], True, max_depth, current_board, heuristique_type)
+            current_board.pop()
             node.value = min(node.value, node.children[-1].value)
             node.beta = min(node.beta, node.value)
             
