@@ -182,6 +182,7 @@ def getHeuristicValueDefenseOriented(current_board:chess.Board, move:chess.Move)
         piece_type = piece.piece_type
         value += VALEUR_PROMOTION[piece_type]
 
+    #parce que les fonctions qui suivent ne peuvent pas prendre un move en argument
     current_board.push(move)
 
     #gain de valeur s'il y a echec
@@ -267,15 +268,15 @@ def miniMax(current_depth:int, node:Node, is_max:bool,
     if(current_depth == max_depth):
         if (heuristique_type == 1):
             if is_max:
-                node.value = node.val_move + getHeuristicValueAttackOriented(current_board, node.move)
-            else:
                 node.value = node.val_move - getHeuristicValueAttackOriented(current_board, node.move)
+            else:
+                node.value = node.val_move + getHeuristicValueAttackOriented(current_board, node.move)
             return 0
         else:
             if is_max:
-                node.value = node.val_move + getHeuristicValueDefenseOriented(current_board, node.move)
-            else:
                 node.value = node.val_move - getHeuristicValueDefenseOriented(current_board, node.move)
+            else:
+                node.value = node.val_move + getHeuristicValueDefenseOriented(current_board, node.move)
             return 0
     
     if is_max:
@@ -283,9 +284,9 @@ def miniMax(current_depth:int, node:Node, is_max:bool,
         node.value = -math.inf
         if(node.move != None):
             if (heuristique_type == 1):
-                node.val_move += getHeuristicValueAttackOriented(current_board, node.move)
+                node.val_move -= getHeuristicValueAttackOriented(current_board, node.move)
             else:
-                node.val_move += getHeuristicValueDefenseOriented(current_board, node.move)
+                node.val_move -= getHeuristicValueDefenseOriented(current_board, node.move)
         for move in current_board.legal_moves:
             node.add(move, None, node.alpha, node.beta, node.val_move)
             current_board.push(move)
