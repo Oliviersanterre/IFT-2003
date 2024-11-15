@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="null" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<?xml-stylesheet type="text/css" href="null"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <title>Example Poem: "The Willow Tree"</title>
+                <author>John Doe</author>
+                <respStmt>
+                    <resp>Encoded by</resp>
+                    <name>Jane Smith</name>
+                </respStmt>
+            </titleStmt>
+            <publicationStmt>
+                <publisher>Open Text Archives</publisher>
+                <pubPlace>Online</pubPlace>
+                <date>2024</date>
+            </publicationStmt>
+            <sourceDesc>
+                <p>Transcribed from the original handwritten manuscript.</p>
+            </sourceDesc>
+        </fileDesc>
+        <xenoData><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:as="http://www.w3.org/ns/activitystreams#" xmlns:cwrc="http://sparql.cwrc.ca/ontologies/cwrc#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:geo="http://www.geonames.org/ontology#" xmlns:oa="http://www.w3.org/ns/oa#" xmlns:schema="http://schema.org/" xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xmlns:fabio="https://purl.org/spar/fabio#" xmlns:bf="http://www.openlinksw.com/schemas/bif#" xmlns:cito="https://sparontologies.github.io/cito/current/cito.html#" xmlns:org="http://www.w3.org/ns/org#"/></xenoData><encodingDesc>
+            <p>The text was encoded according to TEI P5 guidelines.</p>
+        </encodingDesc>
+        <revisionDesc>
+            <change>
+                <date>2024-11-15</date>
+                <resp>Jane Smith</resp>
+                <item>Initial encoding.</item>
+            </change>
+        </revisionDesc>
+    </teiHeader>
+    <text>
+        <body>
+            <div type="poem">
+                <head>The Willow Tree</head>
+                <lg type="stanza">
+                    <l>Beneath the willow's gentle sway,</l>
+                    <l>The weary traveler finds his way.</l>
+                </lg>
+                <lg type="stanza">
+                    <l>Its branches whisper soft and low,</l>
+                    <l>Stories of the winds that blow.</l>
+                </lg>
+            </div>
+        </body>
+    </text>
+</TEI>
